@@ -17,6 +17,14 @@ import (
 )
 
 func main() {
+	// Print a welcome message including the version, build date, and developer
+	fmt.Println("====================================")
+	fmt.Println("Welcome to Solana Monitor")
+	fmt.Println("Version: 1.0.1")
+	fmt.Println("Build Date: 2024-05-04")
+	fmt.Println("Developer: OnlyF0uR")
+	fmt.Println("====================================")
+
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Println("Error loading .env file")

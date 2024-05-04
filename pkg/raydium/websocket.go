@@ -5,47 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/OnlyF0uR/solana-monitor/pkg/utils"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/gagliardetto/solana-go/rpc/ws"
 )
-
-type RaydiumMetadata struct {
-	Nonce          uint64 `json:"nonce"`
-	OpenTime       uint64 `json:"open_time"`
-	InitPcAmount   uint64 `json:"init_pc_amount"`
-	InitCoinAmount uint64 `json:"init_coin_amount"`
-}
-
-type RaydiumInfo struct {
-	// Initialize Market Instruction Data
-	ProgramID            solana.PublicKey // always raydium
-	AmmID                solana.PublicKey // Amm ID (Pair Address)
-	AmmOpenOrders        solana.PublicKey // Amm Open Orders (PoolQuoteTokenAccount)
-	LPTokenAddress       solana.PublicKey // LPToken Address (PoolTokenMint)
-	BaseMint             solana.PublicKey // base mint address (Token Address)
-	QuoteMint            solana.PublicKey // quote mint address (Currency Address)
-	PoolCoinTokenAccount solana.PublicKey // Amm Token Account (PoolCoinTokenAccount)
-	PoolPcTokenAccount   solana.PublicKey // Amm WSOL Token Account (PoolPcTokenAccount)
-	AmmTargetOrders      solana.PublicKey // Amm Target Orders
-	AmmLiquidityCreator  solana.PublicKey // Amm Liquidity Creator (aka account of LP creator that will receive LP tokens)
-
-	BaseMintLiquidity  float64
-	QuoteMintLiquidity float64
-
-	// Initialize Market Instruction Metadata
-	Caller    solana.PublicKey // Caller wallet address
-	TxID      solana.Signature // Transaction ID
-	Slot      uint64           // Chain Slot
-	TxTime    time.Time        // Timestamp of transaction in blockchain
-	Timestamp time.Time        // Timestamp of transaction discovery
-	Swapped   bool             // Whether the pair was created in reverse order.
-
-	Metadata RaydiumMetadata
-}
 
 func Start(ctx context.Context, wsUrl string, ch chan<- solana.Signature) error {
 	client, err := ws.Connect(ctx, wsUrl)

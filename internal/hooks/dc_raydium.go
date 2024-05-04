@@ -86,7 +86,7 @@ func RaydiumDiscord(ch <-chan *raydium.RaydiumInfo) {
 		}
 
 		// Fallback for when no openbook information is available
-		costsStr := "N/A ⚫"
+		costsStr := "N/A ⚪"
 		if costs > 0 {
 			costsStr = strconv.FormatFloat(costs, 'f', 3, 64) + " SOL " + titleEmoji
 		}
@@ -109,7 +109,7 @@ func RaydiumDiscord(ch <-chan *raydium.RaydiumInfo) {
 		}
 		var fundedByAddress string
 		if fbSigner == nil || fbAmount == 0 {
-			color.New(color.FgYellow).Printf("No funded by found\n")
+			color.New(color.FgYellow).Printf("No funded by found for: https://solscan.io/account/%s\n", msg.Caller.String())
 			fundedByAddress = ""
 		} else {
 			fundedByAddress = "\nFunded by: [" + fbSigner.Short(3) + "](https://solscan.io/account/" + fbSigner.String() + ") **(" + strconv.FormatFloat(fbAmount, 'f', 3, 64) + " SOL)**"
