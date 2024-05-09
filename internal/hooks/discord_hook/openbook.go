@@ -18,23 +18,18 @@ func dc_openbook_hook(msg *openbook.OpenbookInfo, ctx context.Context) {
 	startTime := time.Now()
 
 	// Required information about the involved tokens
-	baseTokenData, baseTokenMeta := tokenHelper(ctx, msg.BaseMint)
+	baseTokenData, baseTokenMeta := utils.TokenHelper(ctx, msg.BaseMint)
 	if baseTokenData == nil || baseTokenMeta == nil {
 		return
 	}
 
-	tokenBSymbol := tokenToSymbol(msg.QuoteMint)
+	tokenBSymbol := utils.TokenToSymbol(msg.QuoteMint)
 
 	if os.Getenv("DEBUG") == "1" {
 		fmt.Printf("[%s] Openbook hook timing (before caller balance: %v)\n", msg.TxID, time.Since(startTime))
 	}
 
 	balance := utils.GetBalance_S(ctx, msg.Caller)
-
-	// Make description smaller if larger than 600 characters
-	if len(baseTokenMeta.Description) > 600 {
-		baseTokenMeta.Description = baseTokenMeta.Description[:600] + "..."
-	}
 
 	var embedColour = utils.EMBED_COLOUR_PURPLE
 	var titleEmoji = "🟢"
@@ -97,7 +92,6 @@ func dc_openbook_hook(msg *openbook.OpenbookInfo, ctx context.Context) {
 	_, err := discord.ChannelMessageSendEmbed(openbookChannelID, embed)
 	if err != nil {
 		fmt.Printf("Error sending message: %v\n", err)
-		fmt.Printf("Message: %v\n", msg)
 	}
 
 	if os.Getenv("DEBUG") == "1" {

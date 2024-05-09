@@ -10,7 +10,10 @@ require (
 	github.com/yosefl20/solana-go-sdk v0.0.0-20230508055543-ca2c1241eca6
 )
 
-require github.com/near/borsh-go v0.3.2-0.20220516180422-1ff87d108454 // indirect
+require (
+	github.com/go-telegram/bot v1.2.2 // indirect
+	github.com/near/borsh-go v0.3.2-0.20220516180422-1ff87d108454 // indirect
+)
 
 require (
 	filippo.io/edwards25519 v1.0.0-rc.1 // indirect

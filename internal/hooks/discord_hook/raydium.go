@@ -20,12 +20,12 @@ import (
 func dc_raydium_hook(msg *raydium.RaydiumInfo, ctx context.Context) {
 	startTime := time.Now()
 
-	baseTokenData, baseTokenMeta := tokenHelper(ctx, msg.BaseMint)
+	baseTokenData, baseTokenMeta := utils.TokenHelper(ctx, msg.BaseMint)
 	if baseTokenData == nil || baseTokenMeta == nil {
 		return
 	}
 
-	tokenBSymbol := tokenToSymbol(msg.QuoteMint)
+	tokenBSymbol := utils.TokenToSymbol(msg.QuoteMint)
 
 	// Parse the supply to a float64
 	parsedSupply := float64(baseTokenData.Supply) / math.Pow10(int(baseTokenData.Decimals))
@@ -144,7 +144,6 @@ func dc_raydium_hook(msg *raydium.RaydiumInfo, ctx context.Context) {
 	_, err := discord.ChannelMessageSendEmbed(raydiumChannelID, embed)
 	if err != nil {
 		fmt.Printf("Error sending message: %v\n", err)
-		fmt.Printf("Message: %v\n", msg)
 	}
 
 	if os.Getenv("DEBUG") == "1" {

@@ -39,3 +39,21 @@ func Test_GetTopHolders(t *testing.T) {
 	}
 	t.Logf("holders: %#+v", holders)
 }
+
+func Test_TokenHelper(t *testing.T) {
+	ctx := context.Background()
+	rpcs.Initialise([]string{})
+
+	baseTokenData, baseTokenMeta := TokenHelper(ctx, solana.MustPublicKeyFromBase58("EoptP6e22xWGNYJCTGNS2A1S29Z3CKNPJJ6ASGq8yft6"))
+
+	if baseTokenData == nil {
+		t.Error("baseTokenData is nil")
+	}
+
+	if baseTokenMeta == nil {
+		t.Error("baseTokenMeta is nil")
+	}
+
+	t.Logf("baseTokenData: %#+v", baseTokenData)
+	t.Logf("baseTokenMeta: %#+v", baseTokenMeta)
+}

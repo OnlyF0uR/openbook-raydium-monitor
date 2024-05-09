@@ -10,6 +10,7 @@ import (
 
 	"github.com/OnlyF0uR/solana-monitor/internal/hooks"
 	"github.com/OnlyF0uR/solana-monitor/internal/hooks/discord_hook"
+	"github.com/OnlyF0uR/solana-monitor/internal/hooks/telegram_hook"
 	"github.com/OnlyF0uR/solana-monitor/pkg/openbook"
 	"github.com/OnlyF0uR/solana-monitor/pkg/raydium"
 	"github.com/OnlyF0uR/solana-monitor/pkg/rpcs"
@@ -22,7 +23,7 @@ func main() {
 	// Print a welcome message including the version, build date, and developer
 	color.New(color.FgBlue).Println("============================================")
 	color.New(color.FgCyan).Println("Welcome to Solana Monitor")
-	color.New(color.FgCyan).Println("Version: 1.1.0")
+	color.New(color.FgCyan).Println("Version: 1.1.0-main")
 	color.New(color.FgCyan).Println("Build Date: 2024-05-09")
 	color.New(color.FgCyan).Println("Developer: OnlyF0uR (Discord: onlyspitfire)")
 	color.New(color.FgCyan).Println("Reselling of this software is not allowed!")
@@ -97,8 +98,13 @@ func main() {
 		wg.Done()
 	}()
 
-	// Intialise the discord hooks
-	discord_hook.Initialise()
+	// Intialise the hooks
+	if os.Getenv("ENABLE_DISCORD_HOOK") == "1" {
+		discord_hook.Initialise()
+	}
+	if os.Getenv("ENABLE_TELEGRAM_HOOK") == "1" {
+		telegram_hook.Initialise()
+	}
 
 	go func() {
 		hooks.RunRaydiumHooks(raydiumHookCh)
