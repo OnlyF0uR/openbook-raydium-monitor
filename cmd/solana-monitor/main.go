@@ -22,8 +22,8 @@ func main() {
 	// Print a welcome message including the version, build date, and developer
 	color.New(color.FgBlue).Println("============================================")
 	color.New(color.FgCyan).Println("Welcome to Solana Monitor")
-	color.New(color.FgCyan).Println("Version: 1.0.2")
-	color.New(color.FgCyan).Println("Build Date: 2024-05-05")
+	color.New(color.FgCyan).Println("Version: 1.1.0")
+	color.New(color.FgCyan).Println("Build Date: 2024-05-09")
 	color.New(color.FgCyan).Println("Developer: OnlyF0uR (Discord: onlyspitfire)")
 	color.New(color.FgCyan).Println("Reselling of this software is not allowed!")
 	color.New(color.FgBlue).Println("============================================")
