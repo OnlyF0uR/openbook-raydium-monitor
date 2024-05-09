@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/OnlyF0uR/solana-monitor/internal/load"
 	"github.com/OnlyF0uR/solana-monitor/pkg/openbook"
 	"github.com/OnlyF0uR/solana-monitor/pkg/utils"
 	"github.com/bwmarrin/discordgo"
@@ -20,16 +19,16 @@ func OpenbookDiscord(ch <-chan *openbook.OpenbookInfo) {
 	for msg := range ch {
 		startTime := time.Now()
 
-		channelID := os.Getenv("DISCORD_OPENBOOK_CHANNEL")
-		if channelID == "" {
-			fmt.Println("DISCORD_OPENBOOK_CHANNEL not set")
-			return
+		// Required information about the involved tokens
+		baseTokenData, baseTokenMeta := tokenHelper(ctx, msg.BaseMint)
+		if baseTokenData == nil || baseTokenMeta == nil {
+			continue
 		}
 
-		// Required information about the involved tokens
-		baseTokenData, quoteTokenData, baseTokenMeta := tokenHelper(ctx, msg.BaseMint, msg.QuoteMint)
-		if baseTokenData == nil || quoteTokenData == nil || baseTokenMeta == nil {
-			return
+		tokenBSymbol := tokenToSymbol(msg.QuoteMint)
+
+		if os.Getenv("DEBUG") == "1" {
+			fmt.Printf("[%s] Openbook hook timing (before caller balance: %v)\n", msg.TxID, time.Since(startTime))
 		}
 
 		balance := utils.GetBalance_S(ctx, msg.Caller)
@@ -51,12 +50,16 @@ func OpenbookDiscord(ch <-chan *openbook.OpenbookInfo) {
 
 		warnings := getWarningsString(ctx, msg.Caller, baseTokenMeta.CreatedOn)
 		if warnings != "" {
-			titleEmoji = "🟠"
+			embedColour = utils.EMBED_COLOUR_ORANGE
 		}
 
 		if msg.Costs < 0.5 {
 			embedColour = utils.EMBED_COLOUR_RED
 			titleEmoji = "🔴"
+		}
+
+		if baseTokenMeta.CreatedOn == "https://pump.fun" {
+			embedColour = utils.EMBED_COLOUR_GREEN
 		}
 
 		relatedTokensStr := getRelatedTokenString(ctx, msg.Caller, msg.BaseMint.String())
@@ -65,33 +68,14 @@ func OpenbookDiscord(ch <-chan *openbook.OpenbookInfo) {
 			fmt.Printf("[%s] Openbook hook timing (before discord: %v)\n", msg.TxID, time.Since(startTime))
 		}
 
-		fbSigner, fbAmount, err := utils.GetFundedBy_S(ctx, msg.Caller, msg.TxID)
-		if err != nil {
-			color.New(color.FgRed).Printf("Error getting funded by: %v\n", err)
-			return
-		}
-
-		var fundedByAddress string
-		if fbSigner == nil || fbAmount == 0 {
-			color.New(color.FgYellow).Printf("No funded by found\n")
-			fundedByAddress = ""
-		} else {
-			fundedByAddress = "\nFunded by: [" + fbSigner.Short(3) + "](https://solscan.io/account/" + fbSigner.String() + ") **(" + strconv.FormatFloat(fbAmount, 'f', 3, 64) + " SOL)**"
-			fbName := load.FindFundedByFilter(fbSigner.String(), fbAmount)
-			if fbName != "" {
-				fundedByAddress = "\nFunded by: [" + fbName + "](https://solscan.io/account/" + fbSigner.String() + ") **(" + strconv.FormatFloat(fbAmount, 'f', 3, 64) + " SOL)**"
-				warnings += "\n🚨 " + fbName + " detected 🚨"
-			}
-		}
-
-		_, err = discord.ChannelMessageSendEmbed(channelID, &discordgo.MessageEmbed{
-			Title:       baseTokenData.Data.Symbol + "/" + quoteTokenData.Data.Symbol + " - " + strconv.FormatFloat(msg.Costs, 'f', 3, 64) + " SOL " + titleEmoji,
+		embed := &discordgo.MessageEmbed{
+			Title:       baseTokenData.Data.Symbol + "/" + tokenBSymbol + " - " + strconv.FormatFloat(msg.Costs, 'f', 3, 64) + " SOL " + titleEmoji,
 			Color:       embedColour,
 			Description: warnings,
 			Fields: []*discordgo.MessageEmbedField{
 				{
 					Name:   "Addresses",
-					Value:  "**Token**\n``" + msg.BaseMint.String() + "``\n**Market**\n``openbook:" + msg.Market.String() + "``" + fundedByAddress,
+					Value:  "**Token**\n``" + msg.BaseMint.String() + "``\n**Market**\n``openbook:" + msg.Market.String() + "``",
 					Inline: false,
 				},
 				{
@@ -122,10 +106,18 @@ func OpenbookDiscord(ch <-chan *openbook.OpenbookInfo) {
 			Thumbnail: &discordgo.MessageEmbedThumbnail{
 				URL: baseTokenMeta.Image,
 			},
-		})
+		}
 
+		_, err := discord.ChannelMessageSendEmbed(openbookChannelID, embed)
 		if err != nil {
 			fmt.Printf("Error sending message: %v\n", err)
+			fmt.Printf("Message: %v\n", msg)
+		}
+
+		_, err = discord.ChannelMessageSendEmbed(jointChannelID, embed)
+		if err != nil {
+			fmt.Printf("Error sending message: %v\n", err)
+			fmt.Printf("Message: %v\n", msg)
 		}
 
 		if os.Getenv("DEBUG") == "1" {

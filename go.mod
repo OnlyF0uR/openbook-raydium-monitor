@@ -6,35 +6,18 @@ require (
 	github.com/bwmarrin/discordgo v0.28.1
 	github.com/davecgh/go-spew v1.1.1
 	github.com/gagliardetto/solana-go v1.10.0
+	github.com/joho/godotenv v1.5.1
 	github.com/yosefl20/solana-go-sdk v0.0.0-20230508055543-ca2c1241eca6
 )
 
-require (
-	github.com/chromedp/cdproto v0.0.0-20240501202034-ef67d660e9fd // indirect
-	github.com/chromedp/chromedp v0.9.5 // indirect
-	github.com/chromedp/sysutil v1.0.0 // indirect
-	github.com/go-rod/rod v0.115.0 // indirect
-	github.com/go-rod/stealth v0.4.9 // indirect
-	github.com/gobwas/httphead v0.1.0 // indirect
-	github.com/gobwas/pool v0.2.1 // indirect
-	github.com/gobwas/ws v1.4.0 // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
-	github.com/josharian/intern v1.0.0 // indirect
-	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/near/borsh-go v0.3.2-0.20220516180422-1ff87d108454 // indirect
-	github.com/ysmood/fetchup v0.2.4 // indirect
-	github.com/ysmood/goob v0.4.0 // indirect
-	github.com/ysmood/got v0.39.5 // indirect
-	github.com/ysmood/gson v0.7.3 // indirect
-	github.com/ysmood/leakless v0.8.0 // indirect
-)
+require github.com/near/borsh-go v0.3.2-0.20220516180422-1ff87d108454 // indirect
 
 require (
 	filippo.io/edwards25519 v1.0.0-rc.1 // indirect
 	github.com/andres-erbsen/clock v0.0.0-20160526145045-9e14626cd129 // indirect
 	github.com/blendle/zapdriver v1.3.1 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
-	github.com/fatih/color v1.16.0 // indirect
+	github.com/fatih/color v1.16.0
 	github.com/gagliardetto/binary v0.8.0 // indirect
 	github.com/gagliardetto/treeout v0.1.4 // indirect
 	github.com/google/uuid v1.6.0 // indirect

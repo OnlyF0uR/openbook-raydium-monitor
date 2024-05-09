@@ -8,10 +8,15 @@ import (
 
 	"github.com/OnlyF0uR/solana-monitor/pkg/utils"
 	"github.com/bwmarrin/discordgo"
+	"github.com/fatih/color"
 	"github.com/gagliardetto/solana-go"
 )
 
 var discord *discordgo.Session
+
+var raydiumChannelID string
+var openbookChannelID string
+var jointChannelID string
 
 func InitialiseDiscord() {
 	botToken := os.Getenv("DISCORD_BOT_TOKEN")
@@ -26,31 +31,58 @@ func InitialiseDiscord() {
 
 	discord = dc
 
+	raydiumChannelID = os.Getenv("DISCORD_RAYDIUM_CHANNEL")
+	if raydiumChannelID == "" {
+		panic("DISCORD_RAYDIUM_CHANNEL not set")
+	}
+
+	openbookChannelID = os.Getenv("DISCORD_OPENBOOK_CHANNEL")
+	if openbookChannelID == "" {
+		panic("DISCORD_OPENBOOK_CHANNEL not set")
+	}
+
+	jointChannelID = os.Getenv("DISCORD_JOINT_CHANNEL")
+	if jointChannelID == "" {
+		panic("DISCORD_JOINT_CHANNEL not set")
+	}
+
 	fmt.Printf("Discord hook initialised\n")
 }
 
-func tokenHelper(ctx context.Context, baseMint, quoteMint solana.PublicKey) (*utils.TokenData, *utils.TokenData, *utils.TokenMeta) {
-	btd, err := utils.GetTokendata(ctx, baseMint, false)
-	if err != nil {
-		fmt.Printf("Error getting base token data (%s): %v\n", baseMint.String(), err)
-		return nil, nil, nil
+func tokenToSymbol(token solana.PublicKey) string {
+	if token == solana.WrappedSol {
+		return "SOL"
+	} else if token == utils.USDC_MINT_PUBKEY {
+		return "USDC"
+	} else {
+		return "N/A"
 	}
+}
 
-	qtd, err := utils.GetTokendata(ctx, quoteMint, false)
+func tokenHelper(ctx context.Context, token solana.PublicKey) (*utils.TokenData, *utils.TokenMeta) {
+	btd, err := utils.GetTokendata(ctx, token, false)
 	if err != nil {
-		fmt.Printf("Error getting quote token data (%s): %v\n", quoteMint.String(), err)
-		return nil, nil, nil
+		if os.Getenv("DEBUG") == "1" {
+			if err.Error() == "failed to get mint account data" {
+				color.New(color.FgYellow).Printf("Token (%s) is not a mint\n", token.String())
+				return nil, nil
+			}
+			color.New(color.FgYellow).Printf("Error getting token data (%s): %v\n", token.String(), err)
+		}
+		return nil, nil
 	}
 
 	if btd.Data.Uri == "" {
-		fmt.Printf("Base token (%s) data had to metadata URI\n", btd.Mint.String())
-		return nil, nil, nil
+		color.New(color.FgYellow).Printf("Token (%s) data had no metadata URI, skipping it.\n", btd.Mint.String())
+		return nil, nil
 	}
 
 	btm, err := utils.FetchTokenMeta(btd.Data.Uri)
 	if err != nil {
-		fmt.Printf("Error fetching base token meta (URI: %s): %v\n", btd.Data.Uri, err)
-		return nil, nil, nil
+		if os.Getenv("DEBUG") == "1" {
+			color.New(color.FgYellow).Printf("Error fetching token meta (URI: %s): %v\n", btd.Data.Uri, err)
+		}
+		return nil, nil
 	}
 
 	if btm.Description == "" {
@@ -61,7 +93,7 @@ func tokenHelper(ctx context.Context, baseMint, quoteMint solana.PublicKey) (*ut
 		btm.Description = btm.Description[:600] + "..."
 	}
 
-	return btd, qtd, btm
+	return btd, btm
 }
 
 func getRelatedTokenString(ctx context.Context, caller solana.PublicKey, mint string) string {

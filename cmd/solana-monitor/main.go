@@ -4,26 +4,28 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/OnlyF0uR/solana-monitor/internal/hooks"
-	"github.com/OnlyF0uR/solana-monitor/internal/load"
 	"github.com/OnlyF0uR/solana-monitor/pkg/openbook"
 	"github.com/OnlyF0uR/solana-monitor/pkg/raydium"
 	"github.com/OnlyF0uR/solana-monitor/pkg/rpcs"
+	"github.com/fatih/color"
 	"github.com/gagliardetto/solana-go"
 	"github.com/joho/godotenv"
 )
 
 func main() {
 	// Print a welcome message including the version, build date, and developer
-	fmt.Println("====================================")
-	fmt.Println("Welcome to Solana Monitor")
-	fmt.Println("Version: 1.0.1")
-	fmt.Println("Build Date: 2024-05-04")
-	fmt.Println("Developer: OnlyF0uR")
-	fmt.Println("====================================")
+	color.New(color.FgBlue).Println("============================================")
+	color.New(color.FgCyan).Println("Welcome to Solana Monitor")
+	color.New(color.FgCyan).Println("Version: 1.0.2")
+	color.New(color.FgCyan).Println("Build Date: 2024-05-05")
+	color.New(color.FgCyan).Println("Developer: OnlyF0uR (Discord: onlyspitfire)")
+	color.New(color.FgCyan).Println("Reselling of this software is not allowed!")
+	color.New(color.FgBlue).Println("============================================")
 
 	err := godotenv.Load()
 	if err != nil {
@@ -31,10 +33,9 @@ func main() {
 		return
 	}
 
-	load.LoadFundedByFilters()
-
-	rpcUrl := os.Getenv("SOLANA_RPC_URL")
-	rpcUrl2 := os.Getenv("SOLANA_RPC_URL_BACKUP")
+	// Load RPCs
+	rpcList := strings.Split(os.Getenv("SOLANA_RPC_URLS"), ";")
+	rpcs.Initialise(rpcList)
 
 	wsUrl := os.Getenv("SOLANA_WS_URL")
 
@@ -44,11 +45,6 @@ func main() {
 	// Channels for hooks
 	raydiumHookCh := make(chan *raydium.RaydiumInfo)
 	openbookHookCh := make(chan *openbook.OpenbookInfo)
-
-	rpcs.Initialise([]string{
-		rpcUrl,
-		rpcUrl2,
-	})
 
 	var wg sync.WaitGroup
 	wg.Add(6) // 2 incoming, 2 processing, 2 hooks

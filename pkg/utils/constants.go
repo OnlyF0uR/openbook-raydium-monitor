@@ -1,5 +1,9 @@
 package utils
 
+import "github.com/gagliardetto/solana-go"
+
+var USDC_MINT_PUBKEY = solana.MustPublicKeyFromBase58("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
+
 const (
 	RAYDIUM_PROGRAM_ID   = "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8"
 	OPENBOOK_PRGRAM_ID   = "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"
@@ -11,10 +15,10 @@ const (
 	TOKENMINT_IDENTIFIER = "InitializeMint"
 
 	WRAPPED_SOL_MINT = "So11111111111111111111111111111111111111112"
-	USDC_MINT        = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 
 	EMBED_COLOUR_RED    = 0xff392b
 	EMBED_COLOUR_ORANGE = 0xffa10a
+	EMBED_COLOUR_GREEN  = 0x42f56f
 	EMBED_COLOUR_BLUE   = 0x385dff
 	EMBED_COLOUR_PURPLE = 0x800080
 

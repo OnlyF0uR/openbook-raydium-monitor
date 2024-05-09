@@ -57,42 +57,29 @@ type TokenData struct {
 
 func getAccountData_S(ctx context.Context, tokenKey solana.PublicKey) *token.Mint {
 	var mint *token.Mint
-	lastRpcIndex := -1
 
-	// Loop until we get a valid transaction
-	iter := 0
-	for {
-		// If we fail to get the transaction after 6 attempts, break
-		if iter == 6 {
-			color.New(color.FgRed).Printf("getAccountData -> Failed to get account data after 6 attempts\n")
-			return nil
-		}
-		if iter == 3 {
-			time.Sleep(2 * time.Second)
-		}
+	for i := 0; i < 5; i++ {
+		client := rpcs.BorrowClient()
 
-		client, lastClientIndex := rpcs.BorrowClient(lastRpcIndex)
-		lastRpcIndex = lastClientIndex
-
-		wrapped_ctx, wrapped_cancel := context.WithTimeout(ctx, 5*time.Second)
+		wrapped_ctx, wrapped_cancel := context.WithTimeout(ctx, 8*time.Second)
 		err := client.GetAccountDataInto(wrapped_ctx, tokenKey, &mint)
 		wrapped_cancel()
 
-		if err == nil {
-			// We found the account data
-			break
-		} else {
-			if err.Error() == "not enough data: 15 bytes missing" {
-				if os.Getenv("DEBUG") == "1" {
-					color.New(color.FgRed).Printf("getAccountData -> Invalid mint account (missing 15 bytes): %s\n", tokenKey.String())
-				}
-				return nil
-			} else {
-				color.New(color.FgYellow).Printf("getAccountData -> Failed to get account data, retrying (%d): %v\n", lastRpcIndex+1, err)
+		if err != nil {
+			if os.Getenv("DEBUG") == "1" {
+				color.New(color.FgYellow).Printf("getAccountData -> Failed to get account data, retrying (%d): %v\n", i+1, err)
 			}
+			continue
 		}
 
-		iter++
+		break
+	}
+
+	if mint == nil {
+		if os.Getenv("DEBUG") == "1" {
+			color.New(color.FgYellow).Printf("getAccountData -> Failed to get account data after 5 attempts\n")
+		}
+		return nil
 	}
 
 	return mint
@@ -100,33 +87,30 @@ func getAccountData_S(ctx context.Context, tokenKey solana.PublicKey) *token.Min
 
 func getAccountInfo_S(ctx context.Context, metadataAccount solana.PublicKey) *rpc.GetAccountInfoResult {
 	var accountInfo *rpc.GetAccountInfoResult
-	lastRpcIndex := -1
 
-	// Loop until we get a valid transaction
-	iter := 0
-	for {
-		// If we fail to get the transaction after 6 attempts, break
-		if iter == 6 {
-			color.New(color.FgRed).Printf("getAccountInfo -> Failed to get account info after 5 attempts\n")
-			return nil
-		}
-
-		client, lastClientIndex := rpcs.BorrowClient(lastRpcIndex)
-		lastRpcIndex = lastClientIndex
+	for i := 0; i < 5; i++ {
+		client := rpcs.BorrowClient()
 
 		wrapped_ctx, wrapped_cancel := context.WithTimeout(ctx, 5*time.Second)
 		tmp_accountInfo, err := client.GetAccountInfo(wrapped_ctx, metadataAccount)
 		wrapped_cancel()
 
-		if err == nil {
-			// We found the account info
-			accountInfo = tmp_accountInfo
-			break
-		} else {
-			color.New(color.FgYellow).Printf("getAccountInfo -> Failed to get account info, retrying (%d): %v\n", lastRpcIndex+1, err)
+		if err != nil {
+			if os.Getenv("DEBUG") == "1" {
+				color.New(color.FgYellow).Printf("getAccountInfo_S -> Failed to get account info, retrying (%d): %v\n", i+1, err)
+			}
+			continue
 		}
 
-		iter++
+		accountInfo = tmp_accountInfo
+		break
+	}
+
+	if accountInfo == nil {
+		if os.Getenv("DEBUG") == "1" {
+			color.New(color.FgYellow).Printf("getAccountInfo_S -> Failed to get account info after 5 attempts\n")
+		}
+		return nil
 	}
 
 	return accountInfo
@@ -139,7 +123,7 @@ func GetTokendata(ctx context.Context, tokenKey solana.PublicKey, mayFail bool) 
 
 	if mayFail {
 		// No retries, just return error if failed
-		client, _ := rpcs.BorrowClient(-1)
+		client := rpcs.BorrowClient()
 
 		wrapped_ctx, wrapped_cancel := context.WithTimeout(ctx, 5*time.Second)
 		err := client.GetAccountDataInto(wrapped_ctx, tokenKey, &mint)
@@ -230,11 +214,11 @@ type TokenMeta struct {
 }
 
 func FetchTokenMeta(uri string) (*TokenMeta, error) {
-	if strings.Contains(uri, "nftstorage.link") {
-		splitted := strings.Split(uri, "/")
-		splitted = strings.Split(splitted[len(splitted)-1], ".")
+	if strings.Contains(uri, "ipfs.nftstorage.link") {
+		uri = strings.Split(uri, "https://")[1]
+		uri = strings.Split(uri, ".ipfs.nftstorage.link")[0]
 
-		uri = IPFS_GATEWAY + splitted[0]
+		uri = IPFS_GATEWAY + uri
 	}
 
 	var meta TokenMeta
@@ -296,7 +280,7 @@ type TokenAccountMeta struct {
 }
 
 func GetRelatedTokens(ctx context.Context, account solana.PublicKey) (*[]TokenAccountMeta, error) {
-	client, _ := rpcs.BorrowClient(-1)
+	client := rpcs.BorrowClient()
 
 	wrapped_ctx, wrapped_cancel := context.WithTimeout(ctx, 5*time.Second)
 	tokenAccounts, err := client.GetTokenAccountsByOwner(wrapped_ctx, account, &rpc.GetTokenAccountsConfig{
@@ -342,36 +326,29 @@ type TopHolder struct {
 
 func GetTopHolders_S(ctx context.Context, mint solana.PublicKey) *[]TopHolder {
 	var rpcAccounts *rpc.GetTokenLargestAccountsResult
-	lastRpcIndex := -1
 
-	// Loop until we get a valid transaction
-	iter := 0
-	for {
-		// If we fail to get the transaction after 6 attempts, break
-		if iter == 6 {
-			color.New(color.FgRed).Printf("getAccountInfo -> Failed to get account info after 5 attempts\n")
-			return nil
-		}
-
-		client, lastClientIndex := rpcs.BorrowClient(lastRpcIndex)
-		lastRpcIndex = lastClientIndex
+	for i := 0; i < 5; i++ {
+		client := rpcs.BorrowClient()
 
 		wrapped_ctx, wrapped_cancel := context.WithTimeout(ctx, 5*time.Second)
 		tmp_accounts, err := client.GetTokenLargestAccounts(wrapped_ctx, mint, rpc.CommitmentConfirmed)
 		wrapped_cancel()
 
-		if err == nil {
-			// We found the account info
-			rpcAccounts = tmp_accounts
-			break
-		} else {
-			color.New(color.FgYellow).Printf("getAccountInfo -> Failed to get account info, retrying (%d): %v\n", lastRpcIndex+1, err)
+		if err != nil {
+			color.New(color.FgYellow).Printf("GetTopHolders_S -> Failed to get account info, retrying (%d): %v\n", i+1, err)
+			continue
 		}
 
-		iter++
+		rpcAccounts = tmp_accounts
+		break
 	}
 
 	var topHolders []TopHolder
+	if rpcAccounts == nil {
+		color.New(color.FgRed).Printf("GetTopHolders_S -> Failed to get account info after 5 attempts\n")
+		return &topHolders
+	}
+
 	for _, account := range rpcAccounts.Value {
 		if account.UiTokenAmount.UiAmount == nil {
 			continue
@@ -396,7 +373,7 @@ func GetTopHolders_S(ctx context.Context, mint solana.PublicKey) *[]TopHolder {
 }
 
 func GetTokenAmount(ctx context.Context, account solana.PublicKey, mint solana.PublicKey) float64 {
-	client, _ := rpcs.BorrowClient(-1)
+	client := rpcs.BorrowClient()
 
 	// First we must get the token accounts
 	wrapped_ctx, wrapped_cancel := context.WithTimeout(ctx, 5*time.Second)

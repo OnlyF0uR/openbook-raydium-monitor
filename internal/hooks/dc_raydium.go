@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/OnlyF0uR/solana-monitor/internal/load"
 	"github.com/OnlyF0uR/solana-monitor/pkg/openbook"
 	"github.com/OnlyF0uR/solana-monitor/pkg/raydium"
 	"github.com/OnlyF0uR/solana-monitor/pkg/utils"
@@ -23,25 +22,25 @@ func RaydiumDiscord(ch <-chan *raydium.RaydiumInfo) {
 	for msg := range ch {
 		startTime := time.Now()
 
-		channelID := os.Getenv("DISCORD_RAYDIUM_CHANNEL")
-		if channelID == "" {
-			fmt.Println("DISCORD_RAYDIUM_CHANNEL not set")
-			return
+		baseTokenData, baseTokenMeta := tokenHelper(ctx, msg.BaseMint)
+		if baseTokenData == nil || baseTokenMeta == nil {
+			continue
 		}
 
-		baseTokenData, quoteTokenData, baseTokenMeta := tokenHelper(ctx, msg.BaseMint, msg.QuoteMint)
-		if baseTokenData == nil || quoteTokenData == nil || baseTokenMeta == nil {
-			return
-		}
+		tokenBSymbol := tokenToSymbol(msg.QuoteMint)
 
 		// Parse the supply to a float64
 		parsedSupply := float64(baseTokenData.Supply) / math.Pow10(int(baseTokenData.Decimals))
+
+		if os.Getenv("DEBUG") == "1" {
+			fmt.Printf("[%s] Raydium hook timing (before caller balance: %v)\n", msg.TxID, time.Since(startTime))
+		}
 
 		// Get the balance of the caller
 		balance := utils.GetBalance_S(ctx, msg.Caller)
 
 		// Create the string of the liquidity
-		liquidityStr := strconv.FormatFloat(msg.BaseMintLiquidity, 'f', 0, 64) + " " + baseTokenData.Data.Symbol + " / " + strconv.FormatFloat(msg.QuoteMintLiquidity, 'f', 1, 64) + " " + quoteTokenData.Data.Symbol
+		liquidityStr := strconv.FormatFloat(msg.BaseMintLiquidity, 'f', 0, 64) + " " + baseTokenData.Data.Symbol + " / " + strconv.FormatFloat(msg.QuoteMintLiquidity, 'f', 1, 64) + " " + tokenBSymbol
 
 		// Authority strings
 		mintAuthStr := "🔴 **Enabled** 🔴"
@@ -51,6 +50,10 @@ func RaydiumDiscord(ch <-chan *raydium.RaydiumInfo) {
 		}
 		if baseTokenData.FreezeAuthority == nil {
 			freezeAuthStr = "🟢 **Disabled** 🟢"
+		}
+
+		if os.Getenv("DEBUG") == "1" {
+			fmt.Printf("[%s] Raydium hook timing (before related tokens: %v)\n", msg.TxID, time.Since(startTime))
 		}
 
 		// Related tokens
@@ -77,12 +80,16 @@ func RaydiumDiscord(ch <-chan *raydium.RaydiumInfo) {
 
 		warnings := getWarningsString(ctx, msg.Caller, baseTokenMeta.CreatedOn)
 		if warnings != "" {
-			titleEmoji = "🟠"
+			embedColour = utils.EMBED_COLOUR_ORANGE
 		}
 
 		if costs < 0.5 {
 			embedColour = utils.EMBED_COLOUR_RED
 			titleEmoji = "🔴"
+		}
+
+		if baseTokenMeta.CreatedOn == "https://pump.fun" {
+			embedColour = utils.EMBED_COLOUR_GREEN
 		}
 
 		// Fallback for when no openbook information is available
@@ -102,32 +109,14 @@ func RaydiumDiscord(ch <-chan *raydium.RaydiumInfo) {
 			fmt.Printf("[%s] Raydium hook timing (before discord: %v)\n", msg.TxID, time.Since(startTime))
 		}
 
-		fbSigner, fbAmount, err := utils.GetFundedBy_S(ctx, msg.Caller, msg.TxID)
-		if err != nil {
-			color.New(color.FgRed).Printf("Error getting funded by: %v\n", err)
-			return
-		}
-		var fundedByAddress string
-		if fbSigner == nil || fbAmount == 0 {
-			color.New(color.FgYellow).Printf("No funded by found for: https://solscan.io/account/%s\n", msg.Caller.String())
-			fundedByAddress = ""
-		} else {
-			fundedByAddress = "\nFunded by: [" + fbSigner.Short(3) + "](https://solscan.io/account/" + fbSigner.String() + ") **(" + strconv.FormatFloat(fbAmount, 'f', 3, 64) + " SOL)**"
-			fbName := load.FindFundedByFilter(fbSigner.String(), fbAmount)
-			if fbName != "" {
-				fundedByAddress = "\nFunded by: [" + fbName + "](https://solscan.io/account/" + fbSigner.String() + ") **(" + strconv.FormatFloat(fbAmount, 'f', 3, 64) + " SOL)**"
-				warnings += "\n🚨 " + fbName + " detected 🚨"
-			}
-		}
-
-		_, err = discord.ChannelMessageSendEmbed(channelID, &discordgo.MessageEmbed{
-			Title:       baseTokenData.Data.Symbol + "/" + quoteTokenData.Data.Symbol + " - " + costsStr,
+		embed := &discordgo.MessageEmbed{
+			Title:       baseTokenData.Data.Symbol + "/" + tokenBSymbol + " - " + costsStr,
 			Color:       embedColour,
 			Description: warnings,
 			Fields: []*discordgo.MessageEmbedField{
 				{
 					Name:   "Token Address",
-					Value:  "``" + msg.BaseMint.String() + "``" + fundedByAddress,
+					Value:  "``" + msg.BaseMint.String() + "``",
 					Inline: false,
 				},
 				{
@@ -163,10 +152,19 @@ func RaydiumDiscord(ch <-chan *raydium.RaydiumInfo) {
 			Thumbnail: &discordgo.MessageEmbedThumbnail{
 				URL: baseTokenMeta.Image,
 			},
-		})
+		}
+
+		_, err := discord.ChannelMessageSendEmbed(raydiumChannelID, embed)
+		if err != nil {
+			fmt.Printf("Error sending message: %v\n", err)
+			fmt.Printf("Message: %v\n", msg)
+		}
+
+		_, err = discord.ChannelMessageSendEmbed(jointChannelID, embed)
 
 		if err != nil {
 			fmt.Printf("Error sending message: %v\n", err)
+			fmt.Printf("Message: %v\n", msg)
 		}
 
 		if os.Getenv("DEBUG") == "1" {

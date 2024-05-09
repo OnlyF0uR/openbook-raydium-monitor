@@ -102,8 +102,9 @@ func parseTransaction(ctx context.Context, signature solana.Signature) *RaydiumI
 				return nil
 			}
 
-			if metadataStruct.OpenTime == 0 {
-				metadataStruct.OpenTime = uint64(minfo.Timestamp.Unix())
+			tsUnix := uint64(minfo.Timestamp.Unix())
+			if metadataStruct.OpenTime < tsUnix {
+				metadataStruct.OpenTime = tsUnix
 			}
 
 			minfo.Metadata = metadataStruct
@@ -163,7 +164,7 @@ func destructInfo(instr solana.CompiledInstruction, rpcTx *rpc.GetTransactionRes
 		info.BaseMintLiquidity, info.QuoteMintLiquidity = info.QuoteMintLiquidity, info.BaseMintLiquidity
 		info.PoolCoinTokenAccount, info.PoolPcTokenAccount = info.PoolPcTokenAccount, info.PoolCoinTokenAccount
 		info.Swapped = true
-	} else if info.BaseMint.String() == utils.USDC_MINT {
+	} else if info.BaseMint == utils.USDC_MINT_PUBKEY {
 		info.BaseMint, info.QuoteMint = info.QuoteMint, info.BaseMint
 		info.BaseMintLiquidity, info.QuoteMintLiquidity = info.QuoteMintLiquidity, info.BaseMintLiquidity
 		info.PoolCoinTokenAccount, info.PoolPcTokenAccount = info.PoolPcTokenAccount, info.PoolCoinTokenAccount

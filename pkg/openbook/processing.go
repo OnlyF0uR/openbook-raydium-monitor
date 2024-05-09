@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/OnlyF0uR/solana-monitor/pkg/utils"
+	"github.com/fatih/color"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 )
@@ -35,7 +36,7 @@ func parseTransaction(ctx context.Context, signature solana.Signature) *Openbook
 	}
 
 	if tx == nil || rpcTx == nil {
-		fmt.Printf("Openbook: failed to get transaction: %s\n", signature.String())
+		color.New(color.FgRed).Printf("Openbook -> parseTransaction: failed to get transaction: %s\n", signature.String())
 		return nil
 	}
 
@@ -130,7 +131,7 @@ func destructInfo(instr solana.CompiledInstruction, rpcTx *rpc.GetTransactionRes
 		info.BaseVault, info.QuoteVault = info.QuoteVault, info.BaseVault
 		info.BaseMint, info.QuoteMint = info.QuoteMint, info.BaseMint
 		info.Swapped = true
-	} else if info.BaseMint.String() == utils.USDC_MINT {
+	} else if info.BaseMint == utils.USDC_MINT_PUBKEY {
 		info.BaseMint, info.QuoteMint = info.QuoteMint, info.BaseMint
 		info.BaseVault, info.QuoteVault = info.QuoteVault, info.BaseVault
 		info.Swapped = true
