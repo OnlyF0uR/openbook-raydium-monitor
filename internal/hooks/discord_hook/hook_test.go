@@ -1,4 +1,4 @@
-package hooks
+package discord_hook
 
 import (
 	"context"

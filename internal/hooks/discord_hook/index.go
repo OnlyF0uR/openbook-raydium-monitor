@@ -1,11 +1,11 @@
-package hooks
+package discord_hook
 
 import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
+	"github.com/OnlyF0uR/solana-monitor/internal/hooks"
 	"github.com/OnlyF0uR/solana-monitor/pkg/utils"
 	"github.com/bwmarrin/discordgo"
 	"github.com/fatih/color"
@@ -16,9 +16,8 @@ var discord *discordgo.Session
 
 var raydiumChannelID string
 var openbookChannelID string
-var jointChannelID string
 
-func InitialiseDiscord() {
+func Initialise() {
 	botToken := os.Getenv("DISCORD_BOT_TOKEN")
 	if botToken == "" {
 		panic("DISCORD_BOT_TOKEN not set")
@@ -41,10 +40,9 @@ func InitialiseDiscord() {
 		panic("DISCORD_OPENBOOK_CHANNEL not set")
 	}
 
-	jointChannelID = os.Getenv("DISCORD_JOINT_CHANNEL")
-	if jointChannelID == "" {
-		panic("DISCORD_JOINT_CHANNEL not set")
-	}
+	// Setup hooks
+	hooks.RegisterOpenbookHook(dc_openbook_hook)
+	hooks.RegisterRaydiumHook(dc_raydium_hook)
 
 	fmt.Printf("Discord hook initialised\n")
 }
@@ -64,7 +62,7 @@ func tokenHelper(ctx context.Context, token solana.PublicKey) (*utils.TokenData,
 	if err != nil {
 		if os.Getenv("DEBUG") == "1" {
 			if err.Error() == "failed to get mint account data" {
-				color.New(color.FgYellow).Printf("Token (%s) is not a mint\n", token.String())
+				color.New(color.FgYellow).Printf("Token (%s) is not a valid mint\n", token.String())
 				return nil, nil
 			}
 			color.New(color.FgYellow).Printf("Error getting token data (%s): %v\n", token.String(), err)
@@ -94,51 +92,4 @@ func tokenHelper(ctx context.Context, token solana.PublicKey) (*utils.TokenData,
 	}
 
 	return btd, btm
-}
-
-func getRelatedTokenString(ctx context.Context, caller solana.PublicKey, mint string) string {
-	relatedTokens, err := utils.GetRelatedTokens(ctx, caller)
-	if err != nil {
-		return "None"
-	}
-
-	formattedRelatedTokens := []string{}
-	for _, token := range *relatedTokens {
-		if len(formattedRelatedTokens) >= 3 {
-			break
-		}
-
-		if token.Parsed.Info.Mint == mint {
-			continue
-		}
-
-		tokenData, err := utils.GetTokendata(ctx, solana.MustPublicKeyFromBase58(token.Parsed.Info.Mint), true)
-		if err != nil {
-			continue
-		}
-
-		formattedRelatedTokens = append(formattedRelatedTokens, "["+tokenData.Data.Symbol+"](https://solscan.io/account/"+token.Parsed.Info.Mint+")")
-	}
-
-	relTokensStr := strings.Join(formattedRelatedTokens, ", ")
-	if len(relTokensStr) == 0 {
-		relTokensStr = "None"
-	}
-
-	return relTokensStr
-}
-
-func getWarningsString(ctx context.Context, account solana.PublicKey, createdOn string) string {
-	warnings := ""
-
-	wsolAmount := utils.GetTokenAmount(ctx, account, solana.WrappedSol)
-	if wsolAmount > 0 {
-		warnings += "🚨 WSOL detected 🚨\n"
-	}
-
-	if createdOn == "https://pump.fun" {
-		warnings += "🚨 Pump.fun detected 🚨"
-	}
-
-	return warnings
 }
