@@ -108,7 +108,7 @@ func dc_raydium_hook(msg *raydium.RaydiumInfo, ctx context.Context) {
 			},
 			{
 				Name:   "Pool Info",
-				Value:  "Opens: <t:" + strconv.Itoa(int(msg.Metadata.OpenTime)) + ":R>\nCreator: [" + msg.Caller.Short(3) + "](https://solscan.io/account/" + msg.Caller.String() + ") **(" + strconv.FormatFloat(balance, 'f', 3, 64) + " SOL)**\nLiquidity: **" + liquidityStr,
+				Value:  "Opens: <t:" + strconv.Itoa(int(msg.Metadata.OpenTime)) + ":R>\nCreator: [" + msg.Caller.Short(3) + "](https://solscan.io/account/" + msg.Caller.String() + ") **(" + strconv.FormatFloat(balance, 'f', 3, 64) + " SOL)**\nLiquidity: " + liquidityStr,
 				Inline: false,
 			},
 			{
