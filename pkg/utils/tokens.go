@@ -279,46 +279,6 @@ type TokenAccountMeta struct {
 	Space   int    `json:"space"`
 }
 
-func GetRelatedTokens(ctx context.Context, account solana.PublicKey) (*[]TokenAccountMeta, error) {
-	client := rpcs.BorrowClient()
-
-	wrapped_ctx, wrapped_cancel := context.WithTimeout(ctx, 5*time.Second)
-	tokenAccounts, err := client.GetTokenAccountsByOwner(wrapped_ctx, account, &rpc.GetTokenAccountsConfig{
-		ProgramId: &solana.TokenProgramID,
-	}, &rpc.GetTokenAccountsOpts{
-		Commitment: rpc.CommitmentConfirmed,
-		Encoding:   solana.EncodingJSONParsed,
-	})
-	wrapped_cancel()
-
-	if err != nil {
-		return nil, err
-	}
-
-	var relatedTokens []TokenAccountMeta
-	for _, tokenAccount := range tokenAccounts.Value {
-		if len(relatedTokens) > 6 {
-			break
-		}
-
-		bytes, err := tokenAccount.Account.Data.MarshalJSON()
-		if err != nil {
-			continue
-		}
-
-		// Unmarshall
-		var tokenAccountMeta TokenAccountMeta
-		err = json.Unmarshal(bytes, &tokenAccountMeta)
-		if err != nil {
-			continue
-		}
-
-		relatedTokens = append(relatedTokens, tokenAccountMeta)
-	}
-
-	return &relatedTokens, nil
-}
-
 type TopHolder struct {
 	PublicKey solana.PublicKey
 	Amount    float64
@@ -370,40 +330,4 @@ func GetTopHolders_S(ctx context.Context, mint solana.PublicKey) *[]TopHolder {
 	}
 
 	return &topHolders
-}
-
-func GetTokenAmount(ctx context.Context, account solana.PublicKey, mint solana.PublicKey) float64 {
-	client := rpcs.BorrowClient()
-
-	// First we must get the token accounts
-	wrapped_ctx, wrapped_cancel := context.WithTimeout(ctx, 5*time.Second)
-	result, err := client.GetTokenAccountsByOwner(wrapped_ctx, account, &rpc.GetTokenAccountsConfig{
-		Mint: &mint,
-	}, &rpc.GetTokenAccountsOpts{
-		Commitment: rpc.CommitmentConfirmed,
-		Encoding:   solana.EncodingJSONParsed,
-	})
-	wrapped_cancel()
-
-	if err != nil {
-		return 0
-	}
-
-	if len(result.Value) == 0 {
-		return 0
-	}
-
-	// Get the amount
-	bytes, err := result.Value[0].Account.Data.MarshalJSON()
-	if err != nil {
-		return 0
-	}
-
-	var tokenAccountMeta TokenAccountMeta
-	err = json.Unmarshal(bytes, &tokenAccountMeta)
-	if err != nil {
-		return 0
-	}
-
-	return tokenAccountMeta.Parsed.Info.TokenAmount.UIAmount
 }

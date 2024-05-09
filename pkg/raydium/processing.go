@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/OnlyF0uR/solana-monitor/pkg/utils"
+	"github.com/fatih/color"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 )
@@ -131,6 +132,11 @@ func destructInfo(instr solana.CompiledInstruction, rpcTx *rpc.GetTransactionRes
 	// 	color.New(color.FgYellow).Println("Raydium: found raydium market, but not with SOL currency")
 	// 	return false
 	// }
+
+	if len(instr.Accounts) < 21 {
+		color.New(color.FgYellow).Printf("[RAYDIUM] destructInfo -> Required accounts length for instruction not met (%d)", len(instr.Accounts))
+		return false
+	}
 
 	info.AmmID = safeIndex(instr.Accounts[4])
 	info.AmmOpenOrders = safeIndex(instr.Accounts[6])

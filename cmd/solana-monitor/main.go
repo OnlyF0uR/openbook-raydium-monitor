@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/OnlyF0uR/solana-monitor/internal/hooks"
+	"github.com/OnlyF0uR/solana-monitor/internal/hooks/discord_hook"
 	"github.com/OnlyF0uR/solana-monitor/pkg/openbook"
 	"github.com/OnlyF0uR/solana-monitor/pkg/raydium"
 	"github.com/OnlyF0uR/solana-monitor/pkg/rpcs"
@@ -96,15 +97,16 @@ func main() {
 		wg.Done()
 	}()
 
-	hooks.InitialiseDiscord()
+	// Intialise the discord hooks
+	discord_hook.Initialise()
 
 	go func() {
-		hooks.RaydiumDiscord(raydiumHookCh)
+		hooks.RunRaydiumHooks(raydiumHookCh)
 		wg.Done()
 	}()
 
 	go func() {
-		hooks.OpenbookDiscord(openbookHookCh)
+		hooks.RunOpenbookHooks(openbookHookCh)
 		wg.Done()
 	}()
 

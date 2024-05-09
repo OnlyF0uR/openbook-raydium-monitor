@@ -21,6 +21,7 @@ const (
 	EMBED_COLOUR_GREEN  = 0x42f56f
 	EMBED_COLOUR_BLUE   = 0x385dff
 	EMBED_COLOUR_PURPLE = 0x800080
+	EMBED_COLOUR_WHITE  = 0xffffff
 
 	IPFS_GATEWAY = "https://cloudflare-ipfs.com/ipfs/"
 )
