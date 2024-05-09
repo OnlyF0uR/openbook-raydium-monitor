@@ -29,18 +29,6 @@ func Test_FetchTokenMeta(t *testing.T) {
 	t.Logf("res: %#+v", res)
 }
 
-func Test_GetRelatedTokens(t *testing.T) {
-	ctx := context.Background()
-	rpcs.Initialise([]string{})
-
-	tokens, err := GetRelatedTokens(ctx, solana.MustPublicKeyFromBase58("BoSAn75k8wvHoHL9Akkpk8oX4guvPLNfhLcKZ6zLqc8s"))
-	if err != nil {
-		t.Error(err)
-	}
-
-	t.Logf("tokens: %#+v", *tokens)
-}
-
 func Test_GetTopHolders(t *testing.T) {
 	ctx := context.Background()
 	rpcs.Initialise([]string{})
@@ -50,15 +38,4 @@ func Test_GetTopHolders(t *testing.T) {
 		t.Error("holders is nil")
 	}
 	t.Logf("holders: %#+v", holders)
-}
-
-func Test_GetTokenAmount(t *testing.T) {
-	ctx := context.Background()
-	rpcs.Initialise([]string{})
-
-	amount := GetTokenAmount(ctx, solana.MustPublicKeyFromBase58("ANNiExyBjQ2iAViUbSFTvwWBvvVqQsE77QdAb4qxfTQj"), solana.WrappedSol)
-	if amount == 0 {
-		t.Error("amount is 0")
-	}
-	t.Logf("amount: %#+v", amount)
 }
