@@ -55,7 +55,7 @@ func tg_openbook_hook(msg *openbook.OpenbookInfo, ctx context.Context) {
 		socialsStr = "\n\n*Socials*" + socialsStr
 	}
 
-	linkPreviewDisabled := true
+	linkPreviewDisabled := false
 	_, err := telegram.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID: chatId,
 		Text:   fmt.Sprintf("*\\[OPENBOOK MARKET\\]*\n%s\n\n*Token Address*\n`%s`\n*Market Id*\n`%s`\n*Creator Address* \\(%s\\)\n`%s`\n\n*Token Description*\n%s%s", titleStr, msg.BaseMint.String(), msg.Market.String(), creatorBalanceStr, msg.Caller.String(), baseTokenMeta.Description, socialsStr),
